@@ -75,8 +75,22 @@ class API(object):
                     else:
                         data[field] = self.format(obj, _format[field].get("object", {}))
                 else:
-                    data[field] = obj.get_attribute(_format[field].get("field", field))
+                    data[field] = self._get_attribute(obj, _format[field].get("field", field))
         return data
+
+    def _get_attribute(self, instance, name):
+        if hasattr(instance, name):
+            return getattr(instance, name)
+        names = name.split('__')
+        name = names.pop(0)
+        if len(names) == 0:
+            return None
+        if hasattr(instance, name):
+            value = getattr(instance, name)
+            if value is None:
+                return None
+            return self._get_attribute(value, "__".join(names))
+        return None
 
     def _get_format_keys(self, _format=None):
         _format = self.format_object if not _format else _format
@@ -197,9 +211,11 @@ class API(object):
                 if 'CONTENT_TYPE' in request.META and request.META['CONTENT_TYPE'].startswith('application/json'):
                     request.POST = json.loads(request.body.decode('utf-8'))
                 if not hasattr(settings, "REST_AUTH_SESSION_ENGINE"):
-                    from django.core.exceptions import ImproperlyConfigured
-                    raise ImproperlyConfigured("You must defined 'REST_AUTH_SESSION_ENGINE' in settings")
-                session = import_string(settings.REST_AUTH_SESSION_ENGINE)(request)
+                    session = None
+                    # from django.core.exceptions import ImproperlyConfigured
+                    # raise ImproperlyConfigured("You must defined 'REST_AUTH_SESSION_ENGINE' in settings")
+                else:
+                    session = import_string(settings.REST_AUTH_SESSION_ENGINE)(request)
                 if "_id" in kwargs:
                     kwargs["_id"] = int(kwargs["_id"])
                 if "_id2" in kwargs:

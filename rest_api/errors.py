@@ -9,7 +9,7 @@ class ResponseError(Exception):
 
     def get_response(self):
         data = {'error': self.error, 'error_code': self.code, 'error_details': self.details}
-        from REST.API import API
+        from rest_api.API import API
         return API.make_response(data, self.code)
 
 
