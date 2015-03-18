@@ -1,45 +1,26 @@
 # Django REST API
 
-In settings :
-```python
-REST_AUTH_SESSION_ENGINE = "my_site.auth.AuthSession"
+## Installation
+
+```shell
+pip install django-rest-api
 ```
 
-Example of this class :
-```python
-from rest_api.auth import BaseAuthREST
+You must use Django in version 1.7 or higher.
 
-class AuthSession(BaseAuthREST):
-    def __init__(self, request):
-        self.request = request
-        try:
-            if 'HTTP_AUTHORIZATION' in request.META:
-                self.login_api_key(request.META['HTTP_AUTHORIZATION'])
-        except AuthApiKeyBad:
-            raise ResponseForbidden(details=["Mauvaise clé API."])
-        except AuthApiKeyExpire:
-            raise ResponseForbidden(details=["Clé API expirée."])
+## Documentation
 
-    def is_connected(self):
-        return ...
+For start, you should read how create your different API route: [URL Routing](https://github.com/skies-io/django-rest-api/wiki/URL-Routing).
 
-    def check_right(self, rights, _all=False):
-        return ...
-```
+After, you will have need to return a response: [Responses format](https://github.com/skies-io/django-rest-api/wiki/Responses-format).
 
-Register API :
-```python
-from django.conf.urls import patterns, url, include
-from rest_api.register import RegisterAPI
-from my_site.api_v1.user import UserAPI
-from my_site.api_v1.project import ProjectAPI
+Then, it will be usefull to know how it is advisable to return the results in JSON: [Format results server side](https://github.com/skies-io/django-rest-api/wiki/Format-results-server-side). You could also custom the format results in the client side: [Format results client side](https://github.com/skies-io/django-rest-api/wiki/Format-results-client-side).
 
-api_v1 = RegisterAPI("1.0")
-api_v1.register(UserAPI()) # /api/1.0/user
-api_v1.register(ProjectAPI()) # /api/1.0/project
+Two others pages which could be helpfull:
 
-urlpatterns = patterns(
-    'my_site',
-    url(r'^api/', include(api_v1.urls))
-)
-```
+* [Get Data](https://github.com/skies-io/django-rest-api/wiki/Get-Data): For retrieve data from the request.
+* [Auth Session](https://github.com/skies-io/django-rest-api/wiki/Auth-Session): For add a authentification system to your API.
+
+## Example
+
+You can seen an example which use all functionnalities of the plugin [here](https://github.com/skies-io/django-rest-api/tree/master/example).
