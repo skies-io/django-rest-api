@@ -22,8 +22,8 @@ class RegisterAPI(object):
 
     @staticmethod
     def error_api():
-        def wrapper():
-            return ResponseNotFound.get_response()
+        def wrapper(*args, **kwargs):
+            return ResponseNotFound().get_response()
         return wrapper
 
     @property
@@ -31,9 +31,8 @@ class RegisterAPI(object):
         patterns_list = []
         for name in sorted(self._registry.keys()):
             self._registry[name].api_name = self.api_name
-            patterns_list.append(url(r"^$", self.error_api()))
-            patterns_list.append(url(r"^%s(/?)$" % self.api_name, self.error_api()))
             patterns_list.append(url(r"^%s(/?)" % self.api_name, include(self._registry[name].urls)))
+            patterns_list.append(url(r"^", self.error_api()))
         urls = self.prepend_urls()
         urls += patterns('', *patterns_list)
         return urls
