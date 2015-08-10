@@ -7,7 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.rst'), encodin
 
 setup(
     name='django-rest-api',
-    version='0.1.3',
+    version='0.1.4',
     description='Django REST API',
     long_description=long_description,
     url='https://github.com/skies-io/django-rest-api',

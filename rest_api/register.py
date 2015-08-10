@@ -32,7 +32,7 @@ class RegisterAPI(object):
         for name in sorted(self._registry.keys()):
             self._registry[name].api_name = self.api_name
             patterns_list.append(url(r"^%s(/?)" % self.api_name, include(self._registry[name].urls)))
-            patterns_list.append(url(r"^", self.error_api()))
+        patterns_list.append(url(r"^", self.error_api()))
         urls = self.prepend_urls()
         urls += patterns('', *patterns_list)
         return urls
