@@ -8,7 +8,7 @@ Installation
 
     $ pip install django-rest-api
 
-You must use Django 1.7 or higher.
+You must use Django 1.6 or higher.
 
 Documentation
 -------------

@@ -66,6 +66,22 @@ class ProjectAPI(API):
         # Update project...
         raise ResponseNotImplemented()
 
+    # PATCH /api/1.0/project/<id> : update a project
+    @must_be_connected
+    @get_data(["name", "owner_id"], optional=True)
+    def method_put_detail(self, session, request, _id, data, **kwargs):
+        try:
+            project = Project.objects.get(pk=_id)
+        except:
+            raise ResponseNotFound(details=["Project not found"])
+        for field in data:
+            setattr(project, field, data[field])
+        try:
+            project.save()
+        except Exception as e:
+            raise ResponseError("Unable to patch the project.", details=[str(e)])
+        return self.response(self.format(project))
+
     # DELETE /api/1.0/project/<id> : delete a project
     @must_be_connected
     def method_delete_detail(self, session, request, _id, **kwargs):
@@ -111,4 +127,3 @@ class ProjectAPI(API):
     def method_delete_contributors_detail(self, session, request, _id, _id2, **kwargs):
         # Remove a contributor...
         raise ResponseNotImplemented()
-

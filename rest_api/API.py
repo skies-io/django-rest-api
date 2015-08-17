@@ -7,7 +7,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse
 from django.utils.module_loading import import_string
-from rest_api.errors import ResponseError, ResponseForbidden, ResponseMethodNotAllowed
+from rest_api.errors import *
 
 
 class API(object):
@@ -123,7 +123,7 @@ class API(object):
         authorized_keys = self._get_authorized_keys() if not authorized_keys else authorized_keys
         field_filter = request.GET["filter"]
         if field_filter not in authorized_keys:
-            raise ResponseForbidden(details=["Vous n'êtes pas autorisé à filtrer via ce champs."])
+            raise ResponseNotAllowedFilter()
         filters = dict()
         filters_available = ["exact", "iexact", "contains", "icontains", "gt", "gte", "lt", "lte", "startswith",
                              "istartswith", "endswith", "iendswith", "isnull", "regex", "iregex"]
@@ -131,7 +131,7 @@ class API(object):
             if elem in request.GET:
                 filters[field_filter + "__" + elem] = request.GET[elem]
         if not len(filters):
-            raise ResponseError("Vous devez définir au moins un filtre.")
+            raise ResponseNoFilter()
         return data.filter(**filters)
 
     """
@@ -143,10 +143,10 @@ class API(object):
         authorized_keys = self._get_authorized_keys() if not authorized_keys else authorized_keys
         order = request.GET["order"]
         if order not in authorized_keys:
-            raise ResponseForbidden(details=["Vous n'êtes pas autorisé à filtrer via ce champs."])
+            raise ResponseNotAllowedFilter()
         sort = request.GET.get("sort", "asc")
         if sort not in ["asc", "desc"]:
-            raise ResponseError("L'ordre de tri doit être 'asc' ou 'desc'.")
+            raise ResponseBadOrder()
         return data.order_by(order if sort == "asc" else "-" + order)
 
     """
@@ -164,19 +164,19 @@ class API(object):
             limit = 1 if limit < 1 else limit
             limit = 100 if limit > 100 else limit
         except (TypeError, ValueError):
-            raise ResponseError("Mauvaise valeur.", details=["Le paramètre 'limit' est incorrect."])
+            raise ResponsePaginationBadLimit()
         try:
             current_page = int(request.GET.get('page', 1))
             current_page = 1 if current_page < 1 else current_page
         except (TypeError, ValueError):
-            raise ResponseError("Mauvaise valeur.", details=["Le paramètre 'page' est incorrect."])
+            raise ResponsePaginationBadPage()
         paginator = Paginator(data, limit)
         try:
             page = paginator.page(current_page)
         except PageNotAnInteger:
-            raise ResponseError("Mauvaise valeur.", details=["Le paramètre 'page' est incorrect."])
+            raise ResponsePaginationBadPage()
         except EmptyPage:
-            raise ResponseError("Mauvaise valeur.", details=["Le paramètre 'page' est trop grand."])
+            raise ResponsePaginationEmptyPage()
         return {
             "current_page": current_page,
             "limit": limit,
@@ -199,9 +199,7 @@ class API(object):
                 method = request.method.lower()
                 if method == "head":
                     method = "get"
-                if method == "patch":
-                    method = "put"
-                if method not in ["get", "post", "put", "delete"]:
+                if method not in ["get", "post", "put", "patch", "delete"]:
                     raise ResponseMethodNotAllowed()
                 function = getattr(self, "method_%s_%s" % (method, view), None)
                 if function is None:
@@ -209,7 +207,10 @@ class API(object):
                 if method != "get":
                     request.method = "POST"
                 if 'CONTENT_TYPE' in request.META and request.META['CONTENT_TYPE'].startswith('application/json'):
-                    request.POST = json.loads(request.body.decode('utf-8'))
+                    try:
+                        request.POST = json.loads(request.body.decode('utf-8'))
+                    except:
+                        pass
                 if not hasattr(settings, "REST_AUTH_SESSION_ENGINE"):
                     session = None
                     # from django.core.exceptions import ImproperlyConfigured
@@ -220,7 +221,7 @@ class API(object):
                     kwargs["_id"] = int(kwargs["_id"])
                 if "_id2" in kwargs:
                     kwargs["_id2"] = int(kwargs["_id2"])
-                response = function(session, request, **kwargs)
+                response = function(session=session, request=request, **kwargs)
                 if not isinstance(response, HttpResponse):
                     return self.response(data=None, code=204)
             except ResponseError as e:
@@ -231,4 +232,3 @@ class API(object):
                 raise
             return response
         return wrapper
-
