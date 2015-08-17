@@ -69,7 +69,7 @@ class ProjectAPI(API):
     # PATCH /api/1.0/project/<id> : update a project
     @must_be_connected
     @get_data(["name", "owner_id"], optional=True)
-    def method_put_detail(self, session, request, _id, data, **kwargs):
+    def method_patch_detail(self, session, request, _id, data, **kwargs):
         try:
             project = Project.objects.get(pk=_id)
         except:
